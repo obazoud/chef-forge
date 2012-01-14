@@ -9,7 +9,7 @@
         "subversion",
         "git",
         "jenkins",
-        "jenkins:proxy_apache2"
+        "jenkins::proxy_apache2"
     ]
 }
 
