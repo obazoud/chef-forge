@@ -1,0 +1,15 @@
+{
+		"jenkins": {
+        "http_proxy": {
+        	"variant": "apache2"
+        }
+    },
+
+    "recipes": [
+        "subversion",
+        "git",
+        "jenkins",
+        "jenkins:proxy_apache2"
+    ]
+}
+
