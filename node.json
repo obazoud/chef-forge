@@ -1,5 +1,8 @@
 {
-		"jenkins": {
+		"java": {
+        "install_flavor": "oracle"
+    },
+    "jenkins": {
         "http_proxy": {
         	"variant": "apache2"
         }
