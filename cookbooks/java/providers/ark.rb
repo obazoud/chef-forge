@@ -99,3 +99,50 @@ action :install do
   end
 
   #update-alternatives
+  if new_resource.default
+    Chef::Log.debug "app_home is #{app_home} and app_dir is #{app_dir}"
+    current_link = ::File.symlink?(app_home) ? ::File.readlink(app_home) : nil
+    if current_link != app_dir
+      Chef::Log.debug "symlinking #{app_dir} to #{app_home}"
+      FileUtils.rm_f app_home
+      FileUtils.ln_sf app_dir, app_home
+    end
+    if new_resource.bin_cmds
+      new_resource.bin_cmds.each do |cmd|
+        if ::File.exists? "/usr/bin/#{cmd}"
+          current_bin_link = ::File.readlink("/usr/bin/#{cmd}")
+        else
+          current_bin_link = false
+        end
+        should_be_link = "#{app_home}/bin/#{cmd}"
+        if current_bin_link != should_be_link
+          cmd = Chef::ShellOut.new(
+                                   %Q[ update-alternatives --install /usr/bin/#{cmd} #{cmd} #{app_home}/bin/#{cmd} 1;
+                                       update-alternatives --set #{cmd} #{app_home}/bin/#{cmd}  ]
+                                   ).run_command
+          cmd.error!
+        end
+      end
+    end
+  end
+end
+
+action :remove do
+  app_dir_name, tarball_name = parse_app_dir_name(new_resource.url)
+  app_root = new_resource.app_home.split('/')[0..-2].join('/')
+  app_dir = app_root + '/' + app_dir_name
+
+  if ::File.exists?(app_dir)
+    new_resource.bin_cmds.each do |cmd|
+      cmd = execute "update_alternatives" do
+        command "update-alternatives --remove #{cmd} #{app_dir} "
+        returns [0,2]
+        action :nothing
+      end
+      cmd.run_action(:run)
+    end
+    Chef::Log.info "Removing #{new_resource.name} at #{app_dir}"
+    FileUtils.rm_rf app_dir
+    new_resource.updated_by_last_action(true)
+  end
+end
